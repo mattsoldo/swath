@@ -13,7 +13,7 @@ Key differentiators:
 ## Tech Stack
 
 ### Frontend
-- **Framework:** Next.js 16+ (App Router)
+- **Framework:** Next.js 14+ (App Router)
 - **Language:** TypeScript (strict mode)
 - **Styling:** Tailwind CSS
 - **State Management:** Zustand (simple) or Jotai (atomic)
@@ -23,13 +23,13 @@ Key differentiators:
 ### Backend
 - **Runtime:** Node.js with Next.js API routes (initially), extractable to separate service later
 - **Database:** PostgreSQL with Prisma ORM
-- **Auth:** Clerk
+- **Auth:** NextAuth.js (or Clerk for faster iteration)
 - **File Storage:** S3-compatible (AWS S3, Cloudflare R2, or similar)
 - **Vector Store:** pgvector extension (for retrieval augmentation)
 
 ### AI Integration
-- **Orchestration:** Anthropic Claude API (claude-opus-4-5-20251101 or claude-sonnet-4-5-20250929) - abstracted for future model swapping
-- **Image Generation:** OpenAI API (GPT Image 1.5) — abstracted for future model swapping
+- **Orchestration:** Anthropic Claude API (claude-sonnet-4-20250514 or claude-opus-4-20250514)
+- **Image Generation:** OpenAI API (GPT-4o image generation) — abstracted for future model swapping
 - **Embeddings:** OpenAI text-embedding-3-small (for retrieval)
 
 ### Infrastructure
@@ -438,6 +438,31 @@ DIVERGENCE_THRESHOLD=0.7
 - **Next.js Docs:** https://nextjs.org/docs
 - **Prisma Docs:** https://www.prisma.io/docs
 - **shadcn/ui:** https://ui.shadcn.com
+
+## Specialized Agents
+
+When working on specific areas of the codebase, read the relevant agent file for domain-specific patterns and best practices:
+
+| Agent File | Domain | When to Use |
+|------------|--------|-------------|
+| `agents/canvas.md` | Master Context canvas | Building drag-drop canvas, element positioning, React Flow/Konva |
+| `agents/ai-agent.md` | Creative Director | Agent orchestration, context building, prompt engineering, image generation |
+| `agents/database.md` | Data layer | Prisma schema, migrations, queries, vector storage |
+| `agents/ui.md` | Components & styling | React components, Tailwind, shadcn/ui, accessibility |
+| `agents/api.md` | Backend routes | Next.js API routes, streaming, auth, file uploads |
+| `agents/testing.md` | Testing | Unit tests, integration tests, E2E, fixtures |
+
+**Usage:** Before starting work in a specific area, read the relevant agent file:
+```bash
+# Example: Before working on the canvas
+cat agents/canvas.md
+```
+
+Each agent file contains:
+- Tech stack choices for that domain
+- File ownership (what files to create/modify)
+- Code patterns and examples
+- Common pitfalls to avoid
 
 ## Current Phase
 
