@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { ThreadCreationDialog } from "./ThreadCreationDialog";
@@ -11,16 +10,24 @@ import type { Project, Thread } from "@/types";
 interface DesignModeProps {
   project: Project;
   onUpdate: () => void;
+  // Controlled thread state from parent
+  selectedThread: Thread | null;
+  onThreadChange: (thread: Thread) => void;
+  threadDialogOpen: boolean;
+  onThreadDialogOpenChange: (open: boolean) => void;
 }
 
-export function DesignMode({ project, onUpdate }: DesignModeProps) {
-  const [selectedThread, setSelectedThread] = useState<Thread | null>(
-    project.threads && project.threads.length > 0 ? project.threads[0] : null
-  );
-  const [creationDialogOpen, setCreationDialogOpen] = useState(false);
+export function DesignMode({
+  project,
+  onUpdate,
+  selectedThread,
+  onThreadChange,
+  threadDialogOpen,
+  onThreadDialogOpenChange,
+}: DesignModeProps) {
 
   async function handleThreadCreated() {
-    setCreationDialogOpen(false);
+    onThreadDialogOpenChange(false);
     await onUpdate();
 
     // Select the newly created thread
@@ -28,7 +35,7 @@ export function DesignMode({ project, onUpdate }: DesignModeProps) {
     if (response.ok) {
       const updatedProject = await response.json();
       if (updatedProject.threads && updatedProject.threads.length > 0) {
-        setSelectedThread(updatedProject.threads[updatedProject.threads.length - 1]);
+        onThreadChange(updatedProject.threads[updatedProject.threads.length - 1]);
       }
     }
   }
@@ -44,7 +51,7 @@ export function DesignMode({ project, onUpdate }: DesignModeProps) {
               Design threads let you explore different ideas and iterations.
               Each thread has a focused purpose defined by a prompt.
             </p>
-            <Button onClick={() => setCreationDialogOpen(true)}>
+            <Button onClick={() => onThreadDialogOpenChange(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Create First Thread
             </Button>
@@ -52,8 +59,8 @@ export function DesignMode({ project, onUpdate }: DesignModeProps) {
         </div>
 
         <ThreadCreationDialog
-          open={creationDialogOpen}
-          onOpenChange={setCreationDialogOpen}
+          open={threadDialogOpen}
+          onOpenChange={onThreadDialogOpenChange}
           projectId={project.id}
           onCreated={handleThreadCreated}
         />
@@ -63,33 +70,11 @@ export function DesignMode({ project, onUpdate }: DesignModeProps) {
 
   return (
     <div className="flex-1 flex flex-col">
-      {/* Thread Navigation */}
-      <div className="border-b px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2 overflow-x-auto">
-          {project.threads.map((thread) => (
-            <Button
-              key={thread.id}
-              variant={selectedThread?.id === thread.id ? "default" : "outline"}
-              size="sm"
-              onClick={() => setSelectedThread(thread)}
-              className="whitespace-nowrap"
-            >
-              {thread.prompt.substring(0, 30)}
-              {thread.prompt.length > 30 && "..."}
-            </Button>
-          ))}
-        </div>
-        <Button size="sm" onClick={() => setCreationDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          New Thread
-        </Button>
-      </div>
-
       {/* Main Content: Timeline + Chat */}
       {selectedThread && (
         <div className="flex-1 flex flex-col">
           {/* Thread Prompt Display */}
-          <div className="px-6 py-4 bg-muted/30">
+          <div className="px-6 py-4 bg-muted/30 border-b">
             <p className="text-sm text-muted-foreground">Thread Focus:</p>
             <p className="font-medium">{selectedThread.prompt}</p>
           </div>
@@ -111,8 +96,8 @@ export function DesignMode({ project, onUpdate }: DesignModeProps) {
       )}
 
       <ThreadCreationDialog
-        open={creationDialogOpen}
-        onOpenChange={setCreationDialogOpen}
+        open={threadDialogOpen}
+        onOpenChange={onThreadDialogOpenChange}
         projectId={project.id}
         onCreated={handleThreadCreated}
       />

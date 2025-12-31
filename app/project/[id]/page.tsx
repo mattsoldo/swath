@@ -3,17 +3,22 @@
 import { useEffect, useState } from "react";
 import { use } from "react";
 import { useRouter } from "next/navigation";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { MasterContextCanvas } from "@/components/canvas/MasterContextCanvas";
 import { DesignMode } from "@/components/thread/DesignMode";
-import type { Project } from "@/types";
+import { UnifiedHeader } from "@/components/layout/UnifiedHeader";
+import type { Project, Thread } from "@/types";
+
+type ViewMode = "context" | "design";
 
 export default function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mode, setMode] = useState<ViewMode>("context");
+  const [selectedThread, setSelectedThread] = useState<Thread | null>(null);
+  const [threadDialogOpen, setThreadDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchProject();
@@ -25,12 +30,29 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
       if (response.ok) {
         const data = await response.json();
         setProject(data);
+        // Set initial selected thread if not already selected
+        if (!selectedThread && data.threads && data.threads.length > 0) {
+          setSelectedThread(data.threads[0]);
+        }
       }
     } catch (error) {
       console.error("Failed to fetch project:", error);
     } finally {
       setLoading(false);
     }
+  }
+
+  // Update selected thread when project threads change (e.g., after creating new thread)
+  function handleProjectUpdate() {
+    fetchProject().then(() => {
+      // After fetching, if we're in design mode and a new thread was created, select it
+      if (project?.threads && project.threads.length > 0) {
+        const latestThread = project.threads[project.threads.length - 1];
+        if (latestThread && (!selectedThread || !project.threads.find((t: Thread) => t.id === selectedThread.id))) {
+          setSelectedThread(latestThread);
+        }
+      }
+    });
   }
 
   if (loading) {
@@ -54,37 +76,30 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
 
   return (
     <div className="h-screen flex flex-col">
-      {/* Header */}
-      <div className="border-b px-6 py-4 flex justify-between items-center">
-        <div>
-          <Button variant="ghost" size="sm" onClick={() => router.push("/projects")}>
-            ← Back
-          </Button>
-          <h1 className="text-2xl font-bold inline-block ml-4">{project.name}</h1>
-        </div>
-        <div className="text-sm text-muted-foreground">
-          Status: {project.status}
-        </div>
-      </div>
+      <UnifiedHeader
+        view="project"
+        project={project}
+        mode={mode}
+        onModeChange={setMode}
+        selectedThread={selectedThread}
+        onThreadChange={setSelectedThread}
+        onNewThread={() => setThreadDialogOpen(true)}
+      />
 
       {/* Main Content */}
       <div className="flex-1 overflow-hidden">
-        <Tabs defaultValue="context" className="h-full flex flex-col">
-          <div className="px-6 pt-4">
-            <TabsList>
-              <TabsTrigger value="context">Master Context</TabsTrigger>
-              <TabsTrigger value="design">Design Mode</TabsTrigger>
-            </TabsList>
-          </div>
-
-          <TabsContent value="context" className="flex-1 mt-0 data-[state=active]:flex">
-            <MasterContextCanvas project={project} onUpdate={fetchProject} />
-          </TabsContent>
-
-          <TabsContent value="design" className="flex-1 mt-0 data-[state=active]:flex">
-            <DesignMode project={project} onUpdate={fetchProject} />
-          </TabsContent>
-        </Tabs>
+        {mode === "context" ? (
+          <MasterContextCanvas project={project} onUpdate={fetchProject} />
+        ) : (
+          <DesignMode
+            project={project}
+            onUpdate={handleProjectUpdate}
+            selectedThread={selectedThread}
+            onThreadChange={setSelectedThread}
+            threadDialogOpen={threadDialogOpen}
+            onThreadDialogOpenChange={setThreadDialogOpen}
+          />
+        )}
       </div>
     </div>
   );
